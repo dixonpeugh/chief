@@ -28,4 +28,9 @@
     	<type>pom</type>
     </dependency>
   </dependencies>
+  <scm>
+  	<url>https://github.com/dixonpeugh/chief</url>
+  	<connection>git://github.com/dixonpeugh/chief.git</connection>
+  	<developerConnection>git://github.com/dixonpeugh/chief.git</developerConnection>
+  </scm>
 </project>
