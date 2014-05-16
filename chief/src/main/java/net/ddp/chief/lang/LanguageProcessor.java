@@ -18,10 +18,8 @@ package net.ddp.chief.lang;
 
 import java.io.InputStream;
 
-import net.ddp.chief.lang.ParseException;
-
+import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.Resource;
 
 /**
  * This is a common interface for any class which will process a language
@@ -36,6 +34,6 @@ public interface LanguageProcessor {
 	 * @param aModel Model to load with values from the input.
 	 * @param anInputStream Input stream to load the model from.
 	 */
-	public void process(Model aModel, Resource aSourceResoure, InputStream anInputStream)
+	public void process(Model aModel, Individual aSourceResoure, InputStream anInputStream)
 		throws ParseException;
 }

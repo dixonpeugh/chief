@@ -16,6 +16,23 @@
  */
 package net.ddp.chief;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+
+import net.ddp.chief.know.ont.OntModelFactory;
+import net.ddp.chief.know.ont.OntologyHelper;
+import net.ddp.chief.know.ont.scro.SCROClasses;
+import net.ddp.chief.know.ont.source.SourceProperties;
+import net.ddp.chief.lang.ParseException;
+import net.ddp.chief.lang.java.StructureProcessor;
+
+import com.hp.hpl.jena.ontology.Individual;
+import com.hp.hpl.jena.ontology.OntModel;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.Property;
+
 /**
  * Hello world!
  *
@@ -24,6 +41,27 @@ public class App
 {
     public static void main( String[] args )
     {
-        System.out.println( "Hello World!" );
+    	try {
+			InputStream input = App.class.getClassLoader().getResourceAsStream("App.java");
+			
+	       	Model model = ModelFactory.createDefaultModel();
+			OntModelFactory factory = new OntModelFactory("http://www.cs.uwm.edu/~alnusair/ontologies/scro.owl#");
+			
+			OntModel theSCROModel = factory.getOntologyModel();
+			OntologyHelper helper = new OntologyHelper(theSCROModel);
+
+	       	Individual root = helper.makeIndividual(SCROClasses.COMPILATION_UNIT, "App.java");
+	       	Property prop = model.getProperty(SourceProperties.FILENAME.getURI());
+	       	model.add(model.createStatement(root, prop, model.createLiteral("App.java")));
+	       	
+	       	StructureProcessor proc = new StructureProcessor();
+	       	proc.process(model, root, input);
+	       	
+	       	model.write(System.out);			
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
     }
 }

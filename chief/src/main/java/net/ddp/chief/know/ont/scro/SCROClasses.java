@@ -18,7 +18,8 @@ package net.ddp.chief.know.ont.scro;
 
 import net.ddp.chief.know.ont.OntologyClass;
 
-public enum SCROClasses implements OntologyClass {
+public enum SCROClasses implements OntologyClass 
+{
 	ABSTRACT_CLASS("AbstractClass"),
 	ABSTRACT_LOCAL_CLASS("AbstractLocalClass"),
 	ABSTRACT_MEMBER_CLASS("AbstractMemberClass"),
