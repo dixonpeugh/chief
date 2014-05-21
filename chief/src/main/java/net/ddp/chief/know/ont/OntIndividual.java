@@ -14,25 +14,12 @@
    limitations under the License.
 
  */
-package net.ddp.chief.lang;
-
-import java.io.InputStream;
-
-import com.hp.hpl.jena.rdf.model.Model;
+package net.ddp.chief.know.ont;
 
 /**
- * This is a common interface for any class which will process a language
- * file and create a model.
- * 
- * @author David Dixon-Peugh
+ * @author Basement
+ *
  */
-public interface LanguageProcessor {
-	
-	/**
-	 * Process an input stream, loading statements into the model.
-	 * @param aModel Model to load with values from the input.
-	 * @param anInputStream Input stream to load the model from.
-	 */
-	public void process(Model aModel, String aFilename, InputStream anInputStream)
-		throws ParseException;
+public interface OntIndividual {
+	public String getURI();
 }

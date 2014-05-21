@@ -16,38 +16,32 @@
  */
 package net.ddp.chief.lang.java;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
 
 import net.ddp.chief.know.ont.OntModelFactory;
 import net.ddp.chief.know.ont.OntologyHelper;
+import net.ddp.chief.know.ont.OntologyProperty;
 import net.ddp.chief.know.ont.scro.DataProperties;
 import net.ddp.chief.know.ont.scro.ObjectProperties;
 import net.ddp.chief.know.ont.scro.SCROClasses;
-import net.ddp.chief.lang.LanguageProcessor;
-import net.ddp.chief.lang.ParseException;
-
-import org.apache.commons.io.IOUtils;
 
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntModel;
-import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ImportTree;
-import com.sun.source.tree.Tree;
-import com.sun.source.util.JavacTask;
-import com.sun.source.util.TreeScanner;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.VariableTree;
+import com.sun.source.util.TreePath;
+import com.sun.source.util.TreePathScanner;
+import com.sun.source.util.Trees;
 
 /**
  * This class will parse a Java file, and generate the structural knowledge.  This gets placed into the
@@ -56,11 +50,43 @@ import com.sun.source.util.TreeScanner;
  * @author David Dixon-Peugh
  *
  */
-public class StructureProcessor extends TreeScanner<Void, Individual> implements LanguageProcessor {
+public class StructureProcessor extends TreePathScanner<Object, Trees> {
 	/**
-	 * The compiler which will do the heavy lifting.
+	 * This map will contain a map of short names to fully qualified names.  These
+	 * have come in through the import statement.  (If the import is a * it doesn't work just yet.)
 	 */
-	private final JavaCompiler theCompiler;
+	private Map<String, String> theImportedTypes = new HashMap<>();
+	
+	/**
+	 * This set details the primitive types in Java.
+	 */
+	private static Set<String> thePrimitiveTypes = new HashSet<>();
+	
+	{
+		thePrimitiveTypes.add("void");
+		thePrimitiveTypes.add("short");
+		thePrimitiveTypes.add("int");
+		thePrimitiveTypes.add("long");
+		thePrimitiveTypes.add("byte");
+		thePrimitiveTypes.add("char");
+		thePrimitiveTypes.add("boolean");
+		thePrimitiveTypes.add("float");
+		thePrimitiveTypes.add("double");
+	}
+	/**
+	 * This is the name of the current package.  Default package is "".
+	 */
+	private String thePackageName = "";
+	
+	/**
+	 * This is the current compilation unit we are processing.
+	 */
+	private Individual theCurrentCUnit = null;
+	
+	/**
+	 * This is the current class we are processing.
+	 */
+	private Individual theCurrentClass = null;
 	
 	/**
 	 * The actual ontology model for SCRO.
@@ -75,126 +101,275 @@ public class StructureProcessor extends TreeScanner<Void, Individual> implements
 	/**
 	 * The model we are building.
 	 */
-	private Model theModel = null;
+	private final OntModel theModel;
+
+	
+	public StructureProcessor(OntModel aModel)
+	{
+		OntModelFactory factory = new OntModelFactory("http://www.cs.uwm.edu/~alnusair/ontologies/scro.owl#");
+		theModel = aModel;
+		theSCROModel = factory.getOntologyModel();
+		theSCROHelper = new OntologyHelper(theModel);
+	}
 	
 	/**
-	 * This is a wrapper class around an InputStream.  It allows us to compile from resources
-	 * instead of having to use files.
+	 * Given a classname, lookup the individual - or create it if we haven't already.  This strips out
+	 * any genericness for now.  (Although, eventually, we'll have to put it in.)
+	 * @param aClassName
+	 * @return
 	 */
-	private class StreamJavaSource extends SimpleJavaFileObject
+	public Individual findClass(String aClassName)
 	{
-		private final InputStream theText;
-		
-		public StreamJavaSource(URI aURI, InputStream anInputStream)
-		{
-			super(aURI, JavaFileObject.Kind.SOURCE );
-			theText = anInputStream;
-		}
-
-		@Override
-		public CharSequence getCharContent(boolean anIgnoreEncodingErrorsFlag) throws IOException
-		{
-			return IOUtils.toString(theText);
-		}
+		return theSCROHelper.findOrMakeIndividual(SCROClasses.CLASS_TYPE, aClassName);
 	}
 	
-	public StructureProcessor()
-	{
-		theCompiler = ToolProvider.getSystemJavaCompiler();
-
-		OntModelFactory factory = new OntModelFactory("http://www.cs.uwm.edu/~alnusair/ontologies/scro.owl#");
-		
-		theSCROModel = factory.getOntologyModel();
-		theSCROHelper = new OntologyHelper(theSCROModel);
-	}
-	
-	/* (non-Javadoc)
-	 * @see net.ddp.chief.lang.LanguageProcessor#process(com.hp.hpl.jena.rdf.model.Model, com.hp.hpl.jena.rdf.model.Resource, java.io.InputStream)
+	/**
+	 * Given a package name, lookup the individual, or create it if we haven't alread.
 	 */
-	public void process(Model aModel, 
-			Individual aSourceResource,
-			InputStream anInputStream) 
-					throws ParseException
+	public Individual findPackage(String aClassName)
 	{
-		theModel = aModel;
-		
-		final StandardJavaFileManager fileManager = 
-				theCompiler.getStandardFileManager(null, null, null);
-		try {
-			JavaFileObject file = new StreamJavaSource(new URI(aSourceResource.getURI()), anInputStream);
-
-		
-			final JavacTask task = (JavacTask)
-				theCompiler.getTask(null, fileManager, null, null, null, Collections.singletonList(file));
-			//final Trees trees = Trees.instance(task);
-			for(CompilationUnitTree cUnitTree: task.parse())
-			{
-				cUnitTree.accept(this, aSourceResource);
-			}
-		} catch (URISyntaxException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}	
+		return theSCROHelper.findOrMakeIndividual(SCROClasses.PACKAGE, aClassName);
+	}
+	
+	/**
+	 * Given a fully qualified class name, get the package it belongs to.
+	 * @param aClassName A fully qualified class name.
+	 * @return The package the class belongs to.
+	 */
+	public String makePackageName(String aClassName)
+	{
+		return aClassName.substring(0, aClassName.lastIndexOf("."));
+	}
+	
+	/**
+	 * Creates a property in the model.
+	 * @param aProperty
+	 * @return
+	 */
+	public Property makeProperty(OntologyProperty aProperty)
+	{
+		return theSCROModel.createProperty(aProperty.getURI());
 	}
 
-	@Override
-	public Void visitCompilationUnit(CompilationUnitTree aNode, Individual aRoot)
+	/**
+	 * Tries its best to come up with a fully qualified type name.
+	 * @param aTypeName
+	 * @return
+	 */
+	public String resolve(String aTypeName)
 	{
-		Property belongsTo = theSCROModel.createProperty(ObjectProperties.BELONGS_TO_PKG.getURI());
-		Individual pkg = theSCROHelper.makeIndividual(SCROClasses.PACKAGE, aNode.getPackageName().toString());
-		
-		theModel.add(theModel.createStatement(aRoot, belongsTo, pkg));
-
-		Property imports = theSCROModel.createProperty(ObjectProperties.IMPORTS.getURI());
-		for (ImportTree tree: aNode.getImports())
+		if (thePrimitiveTypes.contains(aTypeName))
 		{
-			String importName = tree.getQualifiedIdentifier().toString();
-			String pkgName = importName.substring(0, importName.lastIndexOf("."));
-			Individual importedPkg = theSCROHelper.makeIndividual(SCROClasses.PACKAGE, pkgName);
-			theModel.add(theModel.createStatement(aRoot, imports, importedPkg));
+			return aTypeName;
 		}
-		
-		for (Tree tree: aNode.getTypeDecls())
+		else if (aTypeName.contains("."))
 		{
-			tree.accept(this, pkg);
+			return aTypeName;
+		} 
+		else if (theImportedTypes.containsKey(aTypeName))
+		{
+			return (theImportedTypes.get(aTypeName));
 		}
-		return null;
-	}	
-	
-	@Override
-	public Void visitClass(ClassTree aNode, Individual aPackage)
-	{
-		Property belongsTo = theSCROModel.createProperty(ObjectProperties.BELONGS_TO_PKG.getURI());
-		Individual clazz = theSCROHelper.makeIndividual(SCROClasses.CLASS_TYPE, aNode.getSimpleName().toString());
-
-		theModel.add(theModel.createStatement(clazz, belongsTo, aPackage));
-	
-		if (aNode.getExtendsClause() != null)
+		else 
+		try
 		{
-			Property extendsProp = theSCROModel.createProperty(ObjectProperties.INHERITS.getURI());
-			Property extendedByProp = theSCROModel.createProperty(ObjectProperties.INHERITED_BY.getURI());
-			Individual extendz = theSCROHelper.makeIndividual(SCROClasses.CLASS_TYPE, aNode.getExtendsClause().toString());
-		
-			theModel.add(theModel.createStatement(clazz, extendsProp, extendz));
-			theModel.add(theModel.createStatement(extendz, extendedByProp, clazz));
-		}
-		
-		if (aNode.getImplementsClause().size() > 0)
-		{
-			Property implementsProp = theSCROModel.createProperty(ObjectProperties.IMPLEMENTS.getURI());
-			Property implementedByProp = theSCROModel.createProperty(ObjectProperties.IMPLEMENTED_BY.getURI());
-		
-			for (Tree tree: aNode.getImplementsClause())
-			{
-				Individual implementz = theSCROHelper.makeIndividual(SCROClasses.CLASS_TYPE, tree.toString());
+			String noArray = aTypeName.substring(0, aTypeName.indexOf('['));
 			
-				theModel.add(theModel.createStatement(clazz, implementsProp, implementz));
-				theModel.add(theModel.createStatement(implementz, implementedByProp, clazz));
+			Class.forName("java.lang." + noArray);
+			return "java.lang." + aTypeName;
+		}
+		catch (ClassNotFoundException ex)
+		{
+			// Will happen most of the time.
+			return thePackageName + "." + aTypeName;
+		}
+	}
+	/**
+	 * Given a typename, create a typespec for it.  (i.e. java.lang.String --> Ljava/lang/String; and int -> int)
+	 * @param aTypeName
+	 * @return
+	 */
+	public String toTypeSpec(String aTypeName)
+	{
+		StringBuffer rc = new StringBuffer();
+		if (aTypeName.contains("["))
+		{
+			int numDimensions = aTypeName.split("\\[").length - 1;
+			for (int i = 0; i < numDimensions; i++)
+			{
+				rc.append("[");				
+			}
+			
+			aTypeName = aTypeName.substring(0, aTypeName.indexOf("["));
+		}
+		switch (aTypeName)
+		{
+		case "void":
+			rc.append("V");
+			break;
+		case "int":
+			rc.append("I");
+			break;
+		case "long":
+			rc.append("J");
+			break;
+		case "short":
+			rc.append("S");
+			break;
+		case "float":
+			rc.append("F");
+			break;
+		case "double":
+			rc.append("D");
+			break;
+		case "boolean":
+			rc.append("Z");
+			break;
+		case "char":
+			rc.append("C");
+			break;
+		default:
+			rc.append("L");
+			rc.append(aTypeName.replaceAll("\\.", "/"));
+			rc.append(";");		
+		}
+		
+		return rc.toString();
+	}
+	
+	/**
+	 * Visits a compilation unit.  Sets the compilation unit so that the
+	 * classes defined within it can reference it.
+	 * 
+	 * CompilationUnit IMPORTS Class
+	 * CompilationUnit IMPORTS Package
+	 * 
+	 */
+	@Override
+	public Object visitCompilationUnit(CompilationUnitTree aNode, Trees aTrees)
+	{
+		String uri = aNode.getSourceFile().toUri().toString();
+		System.err.println(uri);
+		theCurrentCUnit = theSCROHelper.makeIndividual(SCROClasses.COMPILATION_UNIT);
+		thePackageName = aNode.getPackageName().toString();
+		
+		Property imports = makeProperty(ObjectProperties.IMPORTS);
+		for (ImportTree importTree: aNode.getImports())
+		{
+			String importName = importTree.getQualifiedIdentifier().toString();
+			if (importName.endsWith("*"))
+			{
+				theCurrentCUnit.addProperty(imports, findPackage(makePackageName(importName)));				
+			}
+			else
+			{
+				theCurrentCUnit.addProperty(imports, findClass(importName));
+				String shortName = importName.substring(importName.lastIndexOf('.'));
+				theImportedTypes.put(shortName, importName);
 			}
 		}
-		return null;
+		
+		return super.visitCompilationUnit(aNode, aTrees);
+	}
+	
+
+	/**
+	 * Visits a class definition. Here we determine:
+	 * Class BELONGS_TO_PKG Package
+	 * Class IMPLEMENTS Interface / Interface EXTENDED_BY Class
+	 * Class EXTENDS Class / Class EXTENDED_BY Class
+	 * 
+	 * Individual passed in is a package.
+	 */
+	@Override
+	public Object visitClass(ClassTree aNode, Trees aTrees)
+	{
+		TreePath path = getCurrentPath();
+		TypeElement element = (TypeElement) aTrees.getElement(path);
+		
+		thePackageName = makePackageName(element.getQualifiedName().toString());
+		Individual clazz = findClass(element.getQualifiedName().toString());
+		Individual pkg = findPackage(thePackageName);				
+		
+		Property belongsTo = makeProperty(ObjectProperties.BELONGS_TO_PKG);
+		Property definedIn = makeProperty(ObjectProperties.DEFINED_IN_C_UNIT);
+		
+		clazz.addProperty(belongsTo, pkg);
+		if (theCurrentCUnit != null)
+		{
+			clazz.addProperty(definedIn, theCurrentCUnit);
+		}
+		
+		Property extendsProp = makeProperty(ObjectProperties.INHERITS);
+		Property extendedByProp = makeProperty(ObjectProperties.INHERITED_BY);
+		
+		Individual superClazz = findClass(element.getSuperclass().toString());
+		clazz.addProperty(extendsProp, superClazz);
+		superClazz.addProperty(extendedByProp, clazz);
+		
+		Individual superPkg = theSCROHelper.findOrMakeIndividual(SCROClasses.PACKAGE, makePackageName(element.getSuperclass().toString()));
+		superClazz.addProperty(belongsTo, superPkg);
+		
+		for (TypeMirror interfaceMirror: element.getInterfaces())
+		{
+			Property implementsProp = makeProperty(ObjectProperties.IMPLEMENTS);
+			Property implementedByProp = makeProperty(ObjectProperties.IMPLEMENTED_BY);
+			
+			Individual implementz = findClass(interfaceMirror.toString());
+			
+			clazz.addProperty(implementsProp, implementz);
+			implementz.addProperty(implementedByProp, clazz);
+
+			Individual implPkg = findPackage(makePackageName(interfaceMirror.toString()));
+			implementz.addProperty(belongsTo, implPkg);
+		}
+
+		theCurrentClass = clazz;
+		return super.visitClass(aNode, aTrees);
+	}
+	
+	/**
+	 * This visits a method definition.
+	 * 
+	 * Defines:
+	 * Class HAS_METHOD Method
+	 */
+	@Override
+	public Object visitMethod(MethodTree aMethodTree, Trees aTrees)
+	{
+		
+		Property hasMethod = makeProperty(ObjectProperties.HAS_METHOD);
+		Property methodName = makeProperty(DataProperties.HAS_METHOD_NAME);
+		Property signature = makeProperty(DataProperties.HAS_SIGNATURE);
+		
+		StringBuffer methodSignature = new StringBuffer();
+		
+		methodSignature.append("(");
+		
+		for (VariableTree param: aMethodTree.getParameters())
+		{
+			methodSignature.append(toTypeSpec(resolve(param.getType().toString())));
+		}
+		
+		methodSignature.append(")");
+		if (aMethodTree.getReturnType() != null)
+		{
+			methodSignature.append(toTypeSpec(resolve(aMethodTree.getReturnType().toString())));
+		}		
+		
+		Individual method = theSCROHelper.makeIndividual(SCROClasses.METHOD);
+		
+		theCurrentClass.addProperty(hasMethod, method);
+		method.addProperty(methodName, aMethodTree.getName().toString());
+		method.addProperty(signature, methodSignature.toString());
+				
+		//String methodName = aMethodTree.getName().toString();
+		//String returnType = aMethodTree.getReturnType().toString();
+		//List<? extends VariableTree> parameters = aMethodTree.getParameters();
+
+//		Individual method = theSCROHelper.makeIndividual(SCROClasses.METHOD, aMethodTree.getName().toString());
+//		theModel.add(theModel.createStatement(aClass, hasMethod, method));
+		
+		return super.visitMethod(aMethodTree, aTrees);
 	}
 }

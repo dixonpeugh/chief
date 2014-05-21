@@ -5,7 +5,7 @@
   <groupId>net.ddp</groupId>
   <artifactId>chief</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
 
   <name>chief</name>
   <url>http://maven.apache.org</url>
@@ -45,4 +45,7 @@
   	<connection>git://github.com/dixonpeugh/chief.git</connection>
   	<developerConnection>git://github.com/dixonpeugh/chief.git</developerConnection>
   </scm>
+  <modules>
+  	<module>chief-mvn-plugin</module>
+  </modules>
 </project>

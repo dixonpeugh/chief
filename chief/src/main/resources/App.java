@@ -19,7 +19,7 @@ import com.hp.hpl.jena.rdf.model.Property;
  * Hello world!
  *
  */
-public class App extends Ugga implements Bugga, Tugga, Wugga
+public class App extends Ugga implements Bugga<Tugga>, Wugga, InputStream
 {
     public static void main( String[] args ) throws ParseException
     {

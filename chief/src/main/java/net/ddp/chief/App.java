@@ -16,22 +16,21 @@
  */
 package net.ddp.chief;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-import net.ddp.chief.know.ont.OntModelFactory;
-import net.ddp.chief.know.ont.OntologyHelper;
-import net.ddp.chief.know.ont.scro.SCROClasses;
-import net.ddp.chief.know.ont.source.SourceProperties;
-import net.ddp.chief.lang.ParseException;
-import net.ddp.chief.lang.java.StructureProcessor;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaCompiler.CompilationTask;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 
-import com.hp.hpl.jena.ontology.Individual;
+import net.ddp.chief.lang.java.JavaProcessor;
+
 import com.hp.hpl.jena.ontology.OntModel;
-import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.ontology.OntModelSpec;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.Property;
 
 /**
  * Hello world!
@@ -41,27 +40,24 @@ public class App
 {
     public static void main( String[] args )
     {
-    	try {
-			InputStream input = App.class.getClassLoader().getResourceAsStream("App.java");
-			
-	       	Model model = ModelFactory.createDefaultModel();
-			OntModelFactory factory = new OntModelFactory("http://www.cs.uwm.edu/~alnusair/ontologies/scro.owl#");
-			
-			OntModel theSCROModel = factory.getOntologyModel();
-			OntologyHelper helper = new OntologyHelper(theSCROModel);
-
-	       	Individual root = helper.makeIndividual(SCROClasses.COMPILATION_UNIT, "App.java");
-	       	Property prop = model.getProperty(SourceProperties.FILENAME.getURI());
-	       	model.add(model.createStatement(root, prop, model.createLiteral("App.java")));
-	       	
-	       	StructureProcessor proc = new StructureProcessor();
-	       	proc.process(model, root, input);
-	       	
-	       	model.write(System.out);			
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+    	OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM);
+    	JavaProcessor proc = new JavaProcessor(model);
+    	JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    	StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
+    	List<String> fileNames = new ArrayList<>();
+    	for (String name: args)
+    	{
+    		fileNames.add(name);
+    	}
     	
+    	Iterable<? extends JavaFileObject> compilationUnits =
+    			fileManager.getJavaFileObjectsFromStrings(fileNames);
+    	
+    	CompilationTask task = compiler.getTask(null, fileManager, null, null, null, compilationUnits);
+    	task.setProcessors(Collections.singleton(proc));
+    	
+    	task.call();
+    	
+    	model.write(System.out);	
     }
 }

@@ -12,4 +12,9 @@ public class SourceFactoryTest extends TestCase {
 		OntModel model = factory.getOntologyModel();
 		model.write(System.out);
 	}
+	
+	public void testResolve() throws ClassNotFoundException
+	{
+		Class.forName("java.lang.String");
+	}
 }
