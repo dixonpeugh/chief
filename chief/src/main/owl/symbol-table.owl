@@ -1,0 +1,333 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns="http://webprotege.stanford.edu/project/DvijvsZsPzjTB1Lk67cagj#"
+     xml:base="http://webprotege.stanford.edu/project/DvijvsZsPzjTB1Lk67cagj"
+     xmlns:dc="http://purl.org/dc/elements/1.1/"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:webprotege="http://protege.stanford.edu/webprotege/"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <owl:Ontology rdf:about="http://webprotege.stanford.edu/project/DvijvsZsPzjTB1Lk67cagj">
+        <webprotege:revision rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">43</webprotege:revision>
+        <dc:creator rdf:datatype="http://www.w3.org/2001/XMLSchema#string">DDP</dc:creator>
+        <dc:date rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">May 21, 2014 4:52:37 PM</dc:date>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">This ontology was generated from an ontology revision in WebProtege http://webprotege.stanford.edu</rdfs:comment>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">This project is designed to provide symbol table information to a deconstructed application.</rdfs:comment>
+        <dc:creator rdf:datatype="http://www.w3.org/2001/XMLSchema#string">system</dc:creator>
+    </owl:Ontology>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- #compilationUnit -->
+
+    <owl:ObjectProperty rdf:about="#compilationUnit">
+        <rdfs:label>compilationUnit</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- #parentScope -->
+
+    <owl:ObjectProperty rdf:about="#parentScope">
+        <rdfs:label>parentScope</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- #hasType -->
+
+    <owl:ObjectProperty rdf:about="#hasType">
+        <rdfs:label>hasType</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- #tail -->
+
+    <owl:ObjectProperty rdf:about="#tail">
+        <rdfs:label>tail</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- #symbol -->
+
+    <owl:ObjectProperty rdf:about="#symbol">
+        <rdfs:label>symbol</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- #head -->
+
+    <owl:ObjectProperty rdf:about="#head">
+        <rdfs:label>head</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- #definedAt -->
+
+    <owl:ObjectProperty rdf:about="#definedAt">
+        <rdfs:label>definedAt</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- #previous -->
+
+    <owl:ObjectProperty rdf:about="#previous">
+        <rdfs:label>previous</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- #definedIn -->
+
+    <owl:ObjectProperty rdf:about="#definedIn">
+        <rdfs:label>definedIn</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- #position -->
+
+    <owl:ObjectProperty rdf:about="#position">
+        <rdfs:label>position</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Data properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <!-- #symbolName -->
+
+    <owl:DatatypeProperty rdf:about="#symbolName">
+        <rdfs:label>symbolName</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- #filename -->
+
+    <owl:DatatypeProperty rdf:about="#filename">
+        <rdfs:label>filename</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- #endLine -->
+
+    <owl:DatatypeProperty rdf:about="#endLine">
+        <rdfs:label>endLine</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- #endCol -->
+
+    <owl:DatatypeProperty rdf:about="#endCol">
+        <rdfs:label>endCol</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- #startLine -->
+
+    <owl:DatatypeProperty rdf:about="#startLine">
+        <rdfs:label>startLine</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- startCol -->
+
+    <owl:DatatypeProperty rdf:about="startCol">
+        <rdfs:label>startCol</rdfs:label>
+    </owl:DatatypeProperty>
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- #SourceReference -->
+
+    <owl:Class rdf:about="#SourceReference">
+        <rdfs:label>SourceReference</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="#endCol"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#positiveInteger"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="#endLine"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#positiveInteger"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="#filename"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="startCol"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#positiveInteger"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="#compilationUnit"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="#startLine"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#positiveInteger"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- #SymbolWrite -->
+
+    <owl:Class rdf:about="#SymbolWrite">
+        <rdfs:label>SymbolWrite</rdfs:label>
+        <rdfs:subClassOf rdf:resource="#SymbolAccess"/>
+    </owl:Class>
+    
+
+
+    <!-- #Scope -->
+
+    <owl:Class rdf:about="#Scope">
+        <rdfs:label>Scope</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="#parentScope"/>
+                <owl:someValuesFrom rdf:resource="#Scope"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- #StackTrace -->
+
+    <owl:Class rdf:about="#StackTrace">
+        <rdfs:label>StackTrace</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="#head"/>
+                <owl:someValuesFrom rdf:resource="#SourceReference"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="#tail"/>
+                <owl:someValuesFrom rdf:resource="#StackTrace"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- #SymbolAccess -->
+
+    <owl:Class rdf:about="#SymbolAccess">
+        <rdfs:label>SymbolAccess</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="#position"/>
+                <owl:someValuesFrom rdf:resource="#SourceReference"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="#previous"/>
+                <owl:someValuesFrom rdf:resource="#SymbolAccess"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="#symbol"/>
+                <owl:someValuesFrom rdf:resource="#Symbol"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- #SymbolRead -->
+
+    <owl:Class rdf:about="#SymbolRead">
+        <rdfs:label>SymbolRead</rdfs:label>
+        <rdfs:subClassOf rdf:resource="#SymbolAccess"/>
+    </owl:Class>
+    
+
+
+    <!-- #Symbol -->
+
+    <owl:Class rdf:about="#Symbol">
+        <rdfs:label>Symbol</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="#definedIn"/>
+                <owl:someValuesFrom rdf:resource="#Scope"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="#symbolName"/>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="#definedAt"/>
+                <owl:someValuesFrom rdf:resource="#SourceReference"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 3.5.0) http://owlapi.sourceforge.net -->
+
