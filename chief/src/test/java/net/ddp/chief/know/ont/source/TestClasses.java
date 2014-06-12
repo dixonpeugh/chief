@@ -19,10 +19,10 @@ package net.ddp.chief.know.ont.source;
 import java.util.Collections;
 import java.util.List;
 
-import net.ddp.chief.know.ont.scro.DataProperties;
 import net.ddp.chief.know.ont.scro.ObjectProperties;
 import net.ddp.chief.know.ont.scro.SCROClasses;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.hp.hpl.jena.query.ParameterizedSparqlString;
@@ -33,14 +33,20 @@ import com.hp.hpl.jena.query.Query;
  *
  */
 public class TestClasses extends JavaParserTest {
-	public static final String TEST_IMPORT_FILE = "testfiles/Classes.java";
+	public static final String TEST_CLASSES_FILE = "testfiles/Classes.java";
 	
 	/* (non-Javadoc)
 	 * @see net.ddp.chief.know.ont.source.JavaParserTest#getResources()
 	 */
 	@Override
 	public List<String> getResources() {
-		return Collections.singletonList(TEST_IMPORT_FILE);
+		return Collections.singletonList(TEST_CLASSES_FILE);
+	}
+	
+	@BeforeClass
+	public void setup()
+	{
+		parseJavaFile();		
 	}
 	
 	/**
@@ -49,8 +55,6 @@ public class TestClasses extends JavaParserTest {
 	@Test
 	public void testClassesClass()
 	{
-		parseJavaFile();
-		getModel().write(System.err);
 		assertSPARQL("Could not find defined class.", makeAsk(SCROClasses.CLASS_TYPE,
 				new String[] {"testfiles.Classes", "testfiles.Imports", "java.lang.Runnable" }));
 		

@@ -22,17 +22,16 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
-
-import org.apache.jena.atlas.logging.Log;
 
 import net.ddp.chief.know.ont.OntModelFactory;
 import net.ddp.chief.know.ont.OntologyHelper;
 import net.ddp.chief.know.ont.OntologyProperty;
 import net.ddp.chief.know.ont.scro.DataProperties;
+import net.ddp.chief.know.ont.scro.Individuals;
 import net.ddp.chief.know.ont.scro.ObjectProperties;
 import net.ddp.chief.know.ont.scro.SCROClasses;
 
@@ -169,25 +168,32 @@ public class StructureProcessor extends TreePathScanner<Object, Trees> {
 	 */
 	public String resolve(String aTypeName)
 	{
-		if (thePrimitiveTypes.contains(aTypeName))
+		String noArray = aTypeName;
+		String arrayPart = "";
+		if (noArray.contains("["))
+		{
+			noArray = aTypeName.substring(0, aTypeName.indexOf('['));
+			arrayPart = aTypeName.substring(aTypeName.indexOf('['));
+		}
+		
+		if (thePrimitiveTypes.contains(noArray))
 		{
 			return aTypeName;
 		}
-		else if (aTypeName.contains("."))
+		else if (noArray.contains("."))
 		{
 			return aTypeName;
 		} 
-		else if (theImportedTypes.containsKey(aTypeName))
+		else if (theImportedTypes.containsKey(noArray))
 		{
-			return (theImportedTypes.get(aTypeName));
+			return (theImportedTypes.get(noArray) + arrayPart);
 		}
 		else 
 		try
 		{
-			String noArray = aTypeName.substring(0, aTypeName.indexOf('['));
-			
+
 			Class.forName("java.lang." + noArray);
-			return "java.lang." + aTypeName;
+			return "java.lang." + aTypeName;				
 		}
 		catch (ClassNotFoundException ex)
 		{
@@ -195,6 +201,7 @@ public class StructureProcessor extends TreePathScanner<Object, Trees> {
 			return thePackageName + "." + aTypeName;
 		}
 	}
+	
 	/**
 	 * Given a typename, create a typespec for it.  (i.e. java.lang.String --> Ljava/lang/String; and int -> int)
 	 * @param aTypeName
@@ -248,6 +255,29 @@ public class StructureProcessor extends TreePathScanner<Object, Trees> {
 		return rc.toString();
 	}
 	
+	public void applyAccessControl(Individual anItem, Set<Modifier> aModifierSet)
+	{
+		Property hasAccessControl = makeProperty(ObjectProperties.HAS_ACCESS_CONTROL);
+		for (Modifier mod: aModifierSet)
+		{
+			switch (mod)
+			{
+			case PRIVATE:
+				anItem.addProperty(hasAccessControl, theSCROHelper.getIndividual(Individuals.PRIVATE));
+				break;
+			case PUBLIC:
+				anItem.addProperty(hasAccessControl, theSCROHelper.getIndividual(Individuals.PUBLIC));
+				break;
+			case PROTECTED:
+				anItem.addProperty(hasAccessControl, theSCROHelper.getIndividual(Individuals.PROTECTED));
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	
+	// BEGIN VISITOR
 	/**
 	 * Visits a compilation unit.  Sets the compilation unit so that the
 	 * classes defined within it can reference it.
@@ -321,8 +351,6 @@ public class StructureProcessor extends TreePathScanner<Object, Trees> {
 		Property definedIn = makeProperty(ObjectProperties.DEFINED_IN_C_UNIT);
 		Property belongsTo = makeProperty(ObjectProperties.BELONGS_TO_PKG);
 		
-		// Note:  Sometimes, we have inner classes.  This will traverse the
-		// tree until we find the package definition.
 		Element parent = element.getEnclosingElement();
 		while (parent != null)
 		{
@@ -382,6 +410,7 @@ public class StructureProcessor extends TreePathScanner<Object, Trees> {
 			implementz.addProperty(belongsTo, implPkg);
 		}
 
+		applyAccessControl(clazz, aNode.getModifiers().getFlags());
 		theCurrentClass = clazz;
 		return super.visitClass(aNode, aTrees);
 	}
@@ -397,9 +426,13 @@ public class StructureProcessor extends TreePathScanner<Object, Trees> {
 	{
 		
 		Property hasMethod = makeProperty(ObjectProperties.HAS_METHOD);
+		Property hasAbstractMethod = makeProperty(ObjectProperties.HAS_ABSTRACT_METHOD);
+		Property hasStaticMethod = makeProperty(ObjectProperties.HAS_STATIC_METHOD);
+		Property hasFinalMethod = makeProperty(ObjectProperties.HAS_FINAL_METHOD);
+		Property hasAccessControl = makeProperty(ObjectProperties.HAS_ACCESS_CONTROL);
 		Property methodName = makeProperty(DataProperties.HAS_METHOD_NAME);
 		Property signature = makeProperty(DataProperties.HAS_SIGNATURE);
-		
+
 		StringBuffer methodSignature = new StringBuffer();
 		
 		methodSignature.append("(");
@@ -420,7 +453,30 @@ public class StructureProcessor extends TreePathScanner<Object, Trees> {
 		theCurrentClass.addProperty(hasMethod, method);
 		method.addProperty(methodName, aMethodTree.getName().toString());
 		method.addProperty(signature, methodSignature.toString());
-				
+
+		Set<Modifier> modifiers = aMethodTree.getModifiers().getFlags();
+		for (Modifier mod: modifiers)
+		{
+			switch (mod) {
+			case STATIC:
+				method.addOntClass(theSCROHelper.getOntClass(SCROClasses.STATIC_METHOD));
+				theCurrentClass.addProperty(hasStaticMethod, method);
+				break;
+			case ABSTRACT:
+				method.addOntClass(theSCROHelper.getOntClass(SCROClasses.ABSTRACT_METHOD));
+				theCurrentClass.addProperty(hasAbstractMethod, method);
+				break;
+			case FINAL:
+				method.addOntClass(theSCROHelper.getOntClass(SCROClasses.FINAL_METHOD));
+				theCurrentClass.addProperty(hasFinalMethod, method);
+				break;
+			default:
+				// TODO: Handle all cases.
+				break;
+			}
+		}
+		
+		applyAccessControl(method, modifiers);
 		//String methodName = aMethodTree.getName().toString();
 		//String returnType = aMethodTree.getReturnType().toString();
 		//List<? extends VariableTree> parameters = aMethodTree.getParameters();

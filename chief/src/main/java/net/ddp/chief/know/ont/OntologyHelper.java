@@ -55,6 +55,16 @@ public class OntologyHelper {
 	}
 	
 	/**
+	 * Returns a pre-defined individual from the ontology.
+	 * @param anIndividual The enumerated value of the individual.
+	 * @return The individual we are looking for.
+	 */
+	public Individual getIndividual(OntIndividual anIndividual)
+	{
+		return theModel.getIndividual(anIndividual.getURI());
+	}
+	
+	/**
 	 * Create an anonymous individual of the given class.
 	 * @param aClass The type of individual we want.
 	 * @return The anonymous individual.
