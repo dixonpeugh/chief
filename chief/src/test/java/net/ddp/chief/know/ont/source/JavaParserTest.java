@@ -27,12 +27,14 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
+import net.ddp.chief.know.ont.scro.SCROClasses;
 import net.ddp.chief.lang.java.JavaProcessor;
 
 import org.junit.Assert;
 
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
+import com.hp.hpl.jena.query.ParameterizedSparqlString;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
@@ -113,7 +115,6 @@ public abstract class JavaParserTest {
 	 */
 	public void assertNotSPARQL(String aMessage, Query aQuery)
 	{
-		System.err.println(aQuery);
 		QueryExecution exec = QueryExecutionFactory.create(aQuery, theModel);
 		
 		Assert.assertFalse(aMessage, exec.execAsk());

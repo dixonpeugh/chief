@@ -21,8 +21,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
+
+import org.apache.jena.atlas.logging.Log;
 
 import net.ddp.chief.know.ont.OntModelFactory;
 import net.ddp.chief.know.ont.OntologyHelper;
@@ -51,6 +56,12 @@ import com.sun.source.util.Trees;
  *
  */
 public class StructureProcessor extends TreePathScanner<Object, Trees> {
+	/**
+	 * This integer will increment every time we define an anonymous class.  Our anonymous classes
+	 * are of the format $$3$$, instead of the Java format - just because.
+	 */
+	private static int theAnonymousClassCounter = 0;
+	
 	/**
 	 * This map will contain a map of short names to fully qualified names.  These
 	 * have come in through the import statement.  (If the import is a * it doesn't work just yet.)
@@ -124,7 +135,7 @@ public class StructureProcessor extends TreePathScanner<Object, Trees> {
 	}
 	
 	/**
-	 * Given a package name, lookup the individual, or create it if we haven't alread.
+	 * Given a package name, lookup the individual, or create it if we haven't already.
 	 */
 	public Individual findPackage(String aClassName)
 	{
@@ -256,16 +267,19 @@ public class StructureProcessor extends TreePathScanner<Object, Trees> {
 		Property imports = makeProperty(ObjectProperties.IMPORTS);
 		for (ImportTree importTree: aNode.getImports())
 		{
-			String importName = importTree.getQualifiedIdentifier().toString();
-			if (importName.endsWith("*"))
+			if (!importTree.isStatic())
 			{
-				theCurrentCUnit.addProperty(imports, findPackage(makePackageName(importName)));				
-			}
-			else
-			{
-				theCurrentCUnit.addProperty(imports, findClass(importName));
-				String shortName = importName.substring(importName.lastIndexOf('.'));
-				theImportedTypes.put(shortName, importName);
+				String importName = importTree.getQualifiedIdentifier().toString();
+				if (importName.endsWith("*"))
+				{
+					theCurrentCUnit.addProperty(imports, findPackage(makePackageName(importName)));				
+				}
+				else
+				{
+					theCurrentCUnit.addProperty(imports, findClass(importName));
+					String shortName = importName.substring(importName.lastIndexOf('.'));
+					theImportedTypes.put(shortName, importName);
+				}
 			}
 		}
 		
@@ -286,15 +300,59 @@ public class StructureProcessor extends TreePathScanner<Object, Trees> {
 	{
 		TreePath path = getCurrentPath();
 		TypeElement element = (TypeElement) aTrees.getElement(path);
+
+		String className = element.getSimpleName().toString();
+		if (className.equals(""))
+		{
+			// This is an Anonymous class
+			className = "$$" + theAnonymousClassCounter + "$$";
+			theAnonymousClassCounter++;
+		}
 		
-		thePackageName = makePackageName(element.getQualifiedName().toString());
-		Individual clazz = findClass(element.getQualifiedName().toString());
-		Individual pkg = findPackage(thePackageName);				
+		String qualName = element.getQualifiedName().toString();
+		if (qualName.equals(""))
+		{
+			qualName = className;
+		}
 		
-		Property belongsTo = makeProperty(ObjectProperties.BELONGS_TO_PKG);
+		Individual clazz = findClass(qualName);
+		theImportedTypes.put(className, qualName);
+		
 		Property definedIn = makeProperty(ObjectProperties.DEFINED_IN_C_UNIT);
+		Property belongsTo = makeProperty(ObjectProperties.BELONGS_TO_PKG);
 		
-		clazz.addProperty(belongsTo, pkg);
+		// Note:  Sometimes, we have inner classes.  This will traverse the
+		// tree until we find the package definition.
+		Element parent = element.getEnclosingElement();
+		while (parent != null)
+		{
+			boolean handled = false;
+			switch (parent.getKind())
+			{
+			case PACKAGE:
+				thePackageName = ((PackageElement) parent).getSimpleName().toString();
+			
+				Individual pkg = findPackage(thePackageName);				
+			
+				clazz.addProperty(belongsTo, pkg);
+				handled = true;
+				break;
+			case CLASS:
+				String enclosingClassName = parent.getSimpleName().toString();
+				Individual enclosingClass = findClass(resolve(enclosingClassName));
+			
+				Property outerClass = makeProperty(ObjectProperties.HAS_OUTER_CLASS);
+				clazz.addProperty(outerClass, enclosingClass);
+				handled = true;
+				break;
+			default:
+				parent = parent.getEnclosingElement();
+			}			
+			
+			if (handled)
+				break;
+		}
+		
 		if (theCurrentCUnit != null)
 		{
 			clazz.addProperty(definedIn, theCurrentCUnit);

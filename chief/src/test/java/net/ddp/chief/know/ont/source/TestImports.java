@@ -60,8 +60,39 @@ public class TestImports extends JavaParserTest {
 		return Collections.singletonList(TEST_IMPORT_FILE);
 	}
 
-	public Query makeAsk(SCROClasses aType, String anImportList[])
+	/**
+	 * We should see javax.management & java.awt.dnd in our imports.
+	 */
+	@Test
+	public void testPackageImports()
 	{
+		parseJavaFile();
+		getModel().write(System.err);
+
+		assertSPARQL("Did not find required imports.", makeAsk(SCROClasses.PACKAGE, TEST_PACKAGE_IMPORTS));
+		for (String badPackage: TEST_PACKAGE_IMPORTS_BAD)
+		{
+			assertNotSPARQL("Found wrong import: " + badPackage, makeAsk(SCROClasses.PACKAGE, new String[] {badPackage}) );	
+		}
+	}
+	
+	/**
+	 * Check to see if our class imports were registered.
+	 */
+	@Test
+	public void testClassImports()
+	{
+		parseJavaFile();
+		
+		assertSPARQL("Did not find required Class imports.", makeAsk(SCROClasses.CLASS_TYPE, TEST_CLASS_IMPORTS));
+		for (String badClass: TEST_CLASS_IMPORTS_BAD)
+		{
+			assertNotSPARQL("Found wrong import: " + badClass, makeAsk(SCROClasses.PACKAGE, new String[] {badClass}) );	
+		}
+	}
+	
+
+	public Query makeAsk(SCROClasses aType, String anImportList[]) {
 		ParameterizedSparqlString queryStr = new ParameterizedSparqlString();
 		queryStr.setNsPrefix("dc", "http://purl.org/dc/elements/1.1/");
 		queryStr.setNsPrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
@@ -82,30 +113,5 @@ public class TestImports extends JavaParserTest {
 		queryStr.append("}");
 		
 		return queryStr.asQuery();
-	}
-
-	/**
-	 * We should see javax.management & java.awt.dnd in our imports.
-	 */
-	@Test
-	public void testPackageImports()
-	{
-		parseJavaFile();
-		getModel().write(System.err);
-
-		assertSPARQL("Did not find required imports.", makeAsk(SCROClasses.PACKAGE, TEST_PACKAGE_IMPORTS));
-//		assertNotSPARQL("Found wrong imports.", makeAsk(SCROClasses.PACKAGE, TEST_PACKAGE_IMPORTS_BAD));
-	}
-	
-	/**
-	 * Check to see if our class imports were registered.
-	 */
-	@Test
-	public void testClassImports()
-	{
-		parseJavaFile();
-		
-		assertSPARQL("Did not find required Class imports.", makeAsk(SCROClasses.CLASS_TYPE, TEST_CLASS_IMPORTS));
-//		assertNotSPARQL("Found illegal Class imports.", makeAsk(SCROClasses.CLASS_TYPE, TEST_CLASS_IMPORTS_BAD));
 	}
 }
