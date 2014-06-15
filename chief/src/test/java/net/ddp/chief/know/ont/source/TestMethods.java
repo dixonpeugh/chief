@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 import net.ddp.chief.know.ont.scro.DataProperties;
+import net.ddp.chief.know.ont.scro.Individuals;
 import net.ddp.chief.know.ont.scro.ObjectProperties;
 import net.ddp.chief.know.ont.scro.SCROClasses;
 
@@ -71,6 +72,27 @@ public class TestMethods extends JavaParserTest {
 		{ "doNothing", "()V" }
 		};
 	
+	public static final String[][] PUBLIC_METHODS = 
+		{
+		{"<init>", "()"},
+		{"<init>", "(I)" },
+		{"<init>", "([I)" },
+		{"<init>", "(Ljava/lang/String;)"},
+		{"getName", "()Ljava/lang/String;"},
+		{"main", "([Ljava/lang/String;)V"}
+		};
+	
+	public static final String[][] PRIVATE_METHODS = 
+		{
+		{"doNothing", "()V"},
+		{"getValue", "()I"}
+		};
+
+	public static final String[][] PROTECTED_METHODS = 
+		{
+		{"add", "(II)I"}
+		};
+
 	/* (non-Javadoc)
 	 * @see net.ddp.chief.know.ont.source.JavaParserTest#getResources()
 	 */
@@ -84,7 +106,6 @@ public class TestMethods extends JavaParserTest {
 	public void setup()
 	{
 		parseJavaFile();		
-		getModel().write(System.out);
 	}
 	
 	/**
@@ -120,7 +141,6 @@ public class TestMethods extends JavaParserTest {
 			sparql.append(" " + symName + " rdf:type <" + SCROClasses.METHOD.getURI() + "> .\n ");
 		}
 		sparql.append("}");
-		System.err.println(sparql);
 		assertSPARQL("Cannot find expected methods.", sparql.asQuery());
 	}
 	
@@ -226,6 +246,120 @@ public class TestMethods extends JavaParserTest {
 		assertSPARQL("Cannot find final methods.", sparql.asQuery());
 	}
 	
+	@Test
+	public void testPublicMethods()
+	{
+		ParameterizedSparqlString sparql = createSPARQLString();
+		sparql.append(" ASK { ");
+		int sym = 0;
+		
+		sparql.append(" ?clazz dc:title \"testfiles.Methods\" . ");
+		sparql.append(" ?clazz rdf:type <" + SCROClasses.CLASS_TYPE.getURI() + "> . \n");
+
+		for (String pair[] : PUBLIC_METHODS)
+		{
+			String symName = "?method_" + sym;
+			sym++;
+			
+			sparql.append(" ?clazz <" + ObjectProperties.HAS_METHOD.getURI() + "> " + symName + " . ");
+			sparql.append(" " + symName);
+			sparql.append(" <" + DataProperties.HAS_METHOD_NAME.getURI() + "> ");
+			sparql.appendLiteral(pair[0]);
+			sparql.append(" . ");
+			
+			sparql.append(" " + symName + " ");
+			sparql.append(" <" + DataProperties.HAS_SIGNATURE.getURI() + "> ");
+			sparql.appendLiteral(pair[1]);
+			sparql.append(" . ");
+			
+			sparql.append(" " + symName + " ");
+			sparql.append(" <" + ObjectProperties.HAS_ACCESS_CONTROL.getURI() + "> ");
+			sparql.append(" <" + Individuals.PUBLIC.getURI() + "> ");
+			sparql.append(" . ");
+						
+			sparql.append(" " + symName + " rdf:type <" + SCROClasses.METHOD.getURI() + "> .\n ");
+			
+		}
+		sparql.append(" } ");
+		assertSPARQL("Cannot find public methods.", sparql.asQuery());		
+	}
+
+	@Test
+	public void testPrivateMethods()
+	{
+		ParameterizedSparqlString sparql = createSPARQLString();
+		sparql.append(" ASK { ");
+		int sym = 0;
+		
+		sparql.append(" ?clazz dc:title \"testfiles.Methods\" . ");
+		sparql.append(" ?clazz rdf:type <" + SCROClasses.CLASS_TYPE.getURI() + "> . \n");
+
+		for (String pair[] : PRIVATE_METHODS)
+		{
+			String symName = "?method_" + sym;
+			sym++;
+			
+			sparql.append(" ?clazz <" + ObjectProperties.HAS_METHOD.getURI() + "> " + symName + " . ");
+			sparql.append(" " + symName);
+			sparql.append(" <" + DataProperties.HAS_METHOD_NAME.getURI() + "> ");
+			sparql.appendLiteral(pair[0]);
+			sparql.append(" . ");
+			
+			sparql.append(" " + symName + " ");
+			sparql.append(" <" + DataProperties.HAS_SIGNATURE.getURI() + "> ");
+			sparql.appendLiteral(pair[1]);
+			sparql.append(" . ");
+			
+			sparql.append(" " + symName + " ");
+			sparql.append(" <" + ObjectProperties.HAS_ACCESS_CONTROL.getURI() + "> ");
+			sparql.append(" <" + Individuals.PRIVATE.getURI() + "> ");
+			sparql.append(" . ");
+
+			sparql.append(" " + symName + " rdf:type <" + SCROClasses.METHOD.getURI() + "> .\n ");
+		}
+		sparql.append(" } ");
+		
+		assertSPARQL("Cannot find private methods.", sparql.asQuery());		
+	}
+
+	@Test
+	public void testProtectedMethods()
+	{
+		ParameterizedSparqlString sparql = createSPARQLString();
+		sparql.append(" ASK { ");
+		int sym = 0;
+		
+		sparql.append(" ?clazz dc:title \"testfiles.Methods\" . ");
+		sparql.append(" ?clazz rdf:type <" + SCROClasses.CLASS_TYPE.getURI() + "> . \n");
+
+		for (String pair[] : PROTECTED_METHODS)
+		{
+			String symName = "?method_" + sym;
+			sym++;
+			
+			sparql.append(" ?clazz <" + ObjectProperties.HAS_METHOD.getURI() + "> " + symName + " . ");
+			sparql.append(" " + symName);
+			sparql.append(" <" + DataProperties.HAS_METHOD_NAME.getURI() + "> ");
+			sparql.appendLiteral(pair[0]);
+			sparql.append(" . ");
+			
+			sparql.append(" " + symName + " ");
+			sparql.append(" <" + DataProperties.HAS_SIGNATURE.getURI() + "> ");
+			sparql.appendLiteral(pair[1]);
+			sparql.append(" . ");
+			
+			sparql.append(" " + symName + " ");
+			sparql.append(" <" + ObjectProperties.HAS_ACCESS_CONTROL.getURI() + "> ");
+			sparql.append(" <" + Individuals.PROTECTED.getURI() + "> ");
+			sparql.append(" . ");
+
+			sparql.append(" " + symName + " rdf:type <" + SCROClasses.METHOD.getURI() + "> .\n ");
+		}
+		sparql.append(" } ");
+		
+		assertSPARQL("Cannot find protected methods.", sparql.asQuery());		
+	}
+
 	
 	public ParameterizedSparqlString createSPARQLString()
 	{

@@ -429,7 +429,6 @@ public class StructureProcessor extends TreePathScanner<Object, Trees> {
 		Property hasAbstractMethod = makeProperty(ObjectProperties.HAS_ABSTRACT_METHOD);
 		Property hasStaticMethod = makeProperty(ObjectProperties.HAS_STATIC_METHOD);
 		Property hasFinalMethod = makeProperty(ObjectProperties.HAS_FINAL_METHOD);
-		Property hasAccessControl = makeProperty(ObjectProperties.HAS_ACCESS_CONTROL);
 		Property methodName = makeProperty(DataProperties.HAS_METHOD_NAME);
 		Property signature = makeProperty(DataProperties.HAS_SIGNATURE);
 
